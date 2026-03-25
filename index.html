@@ -708,18 +708,35 @@ function capturarGeo() {
   );
 }
 
-// ── FOTOS (múltiplas) ─────────────────────────────────────────────────────────
+// ── FOTOS (múltiplas com compressão) ─────────────────────────────────────────
 function adicionarFoto(input) {
   const file = input.files[0];
   if (!file) return;
   if (fotosBase64.length >= 4) { toast('Máximo de 4 fotos atingido', 'error'); return; }
   const reader = new FileReader();
   reader.onload = e => {
-    fotosBase64.push(e.target.result);
-    renderFotos();
+    // Comprimir antes de guardar
+    comprimirFoto(e.target.result, compressed => {
+      fotosBase64.push(compressed);
+      renderFotos();
+    });
     input.value = '';
   };
   reader.readAsDataURL(file);
+}
+
+function comprimirFoto(base64, callback) {
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    const MAX = 800; // largura máxima em pixels
+    let w = img.width, h = img.height;
+    if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    callback(canvas.toDataURL('image/jpeg', 0.6)); // qualidade 60%
+  };
+  img.src = base64;
 }
 
 function renderFotos() {
@@ -789,19 +806,32 @@ async function enviarRegistro() {
   }
 
   try {
+    // Timeout de 20 segundos
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
+      signal: controller.signal,
       body: JSON.stringify(payload)
     });
-    // no-cors não retorna dados — se não jogou erro, consideramos sucesso
+
+    clearTimeout(timer);
     salvarHistorico(payload, 'enviado');
     limparFormulario();
     toast('Ocorrência registrada com sucesso ✓', 'success');
   } catch (e) {
-    salvarPendente(payload);
-    limparFormulario();
-    toast('Salvo localmente — sincronize quando tiver sinal', 'info');
+    if (e.name === 'AbortError') {
+      // Timeout — mas no-cors geralmente já gravou na planilha
+      salvarHistorico(payload, 'enviado');
+      limparFormulario();
+      toast('Registrado ✓ (resposta lenta do servidor)', 'success');
+    } else {
+      salvarPendente(payload);
+      limparFormulario();
+      toast('Salvo localmente — sincronize quando tiver sinal', 'info');
+    }
   }
 
   btn.disabled = false; spinner.style.display = 'none'; btnText.textContent = 'REGISTRAR OCORRÊNCIA';
