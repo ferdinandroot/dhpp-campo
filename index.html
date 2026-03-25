@@ -325,7 +325,7 @@
     </svg>
   </div>
   <div class="login-title">ACESSO RESTRITO</div>
-  <div class="login-sub">CIPC PCMA — Sistema Operacional</div>
+  <div class="login-sub">CIPC Balsas — Sistema Operacional</div>
 
   <div class="login-box">
     <label class="login-label">Senha de acesso</label>
@@ -414,7 +414,7 @@
           </div>
           <div>
             <label>Unidade / Equipe</label>
-            <input type="text" id="f-unidade" placeholder="Ex: DHPP / EQ-01">
+            <input type="text" id="f-unidade" placeholder="Ex: CIPC / EQ-01">
           </div>
         </div>
       </div>
@@ -790,23 +790,23 @@ async function enviarRegistro() {
 
 // ── LOCAL STORAGE ─────────────────────────────────────────────────────────────
 function salvarPendente(payload) {
-  const pendentes = JSON.parse(localStorage.getItem('dhpp_pendentes') || '[]');
+  const pendentes = JSON.parse(localStorage.getItem('cipc_pendentes') || '[]');
   pendentes.push(payload);
-  localStorage.setItem('dhpp_pendentes', JSON.stringify(pendentes));
+  localStorage.setItem('cipc_pendentes', JSON.stringify(pendentes));
   salvarHistorico(payload, 'pendente');
   checkPending();
 }
 
 function salvarHistorico(payload, status) {
-  const hist = JSON.parse(localStorage.getItem('dhpp_historico') || '[]');
+  const hist = JSON.parse(localStorage.getItem('cipc_historico') || '[]');
   hist.unshift({ ...payload, status });
   if (hist.length > 100) hist.pop();
-  localStorage.setItem('dhpp_historico', JSON.stringify(hist));
+  localStorage.setItem('cipc_historico', JSON.stringify(hist));
   renderHistorico();
 }
 
 function checkPending() {
-  const pendentes = JSON.parse(localStorage.getItem('dhpp_pendentes') || '[]');
+  const pendentes = JSON.parse(localStorage.getItem('cipc_pendentes') || '[]');
   const bar = document.getElementById('pending-bar');
   if (pendentes.length > 0) {
     bar.classList.add('show');
@@ -818,7 +818,7 @@ function checkPending() {
 
 async function syncPending() {
   if (!navigator.onLine) { toast('Sem conexão', 'error'); return; }
-  const pendentes = JSON.parse(localStorage.getItem('dhpp_pendentes') || '[]');
+  const pendentes = JSON.parse(localStorage.getItem('cipc_pendentes') || '[]');
   if (!pendentes.length) { toast('Nenhum pendente', 'info'); return; }
   toast('Sincronizando ' + pendentes.length + ' registro(s)...', 'info');
   let ok = 0, falhas = [];
@@ -830,7 +830,7 @@ async function syncPending() {
       else falhas.push(p);
     } catch { falhas.push(p); }
   }
-  localStorage.setItem('dhpp_pendentes', JSON.stringify(falhas));
+  localStorage.setItem('cipc_pendentes', JSON.stringify(falhas));
   checkPending();
   renderHistorico();
   if (falhas.length === 0) toast(`${ok} registro(s) enviado(s) ✓`, 'success');
@@ -839,7 +839,7 @@ async function syncPending() {
 
 // ── HISTÓRICO ─────────────────────────────────────────────────────────────────
 function renderHistorico() {
-  const hist = JSON.parse(localStorage.getItem('dhpp_historico') || '[]');
+  const hist = JSON.parse(localStorage.getItem('cipc_historico') || '[]');
   const el = document.getElementById('historico-lista');
   if (!hist.length) {
     el.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text3);font-size:14px">Nenhum registro ainda</div>';
