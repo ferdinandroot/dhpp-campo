@@ -1,7 +1,7 @@
 {
-  "name": "DHPP Campo",
-  "short_name": "DHPP",
-  "description": "Registro de ocorrências em campo - DHPP Balsas",
+  "name": "CIPC Campo",
+  "short_name": "CIPC",
+  "description": "Registro de ocorrências em campo - CIPC",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0a0f1e",
