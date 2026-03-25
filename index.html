@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0f1e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DHPP Campo">
+<link rel="manifest" href="manifest.json">
+<title>DHPP Campo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0a0f1e;
+    --bg2:       #111827;
+    --bg3:       #1a2235;
+    --border:    #1e2d45;
+    --accent:    #1d6ef5;
+    --accent2:   #0ea5e9;
+    --danger:    #ef4444;
+    --success:   #10b981;
+    --warning:   #f59e0b;
+    --text:      #e2e8f0;
+    --text2:     #94a3b8;
+    --text3:     #475569;
+    --font-head: 'Rajdhani', sans-serif;
+    --font-body: 'Inter', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-body); overflow-x: hidden; }
+
+  /* ── SPLASH ── */
+  #splash {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 100; transition: opacity .5s ease;
+  }
+  #splash.hide { opacity: 0; pointer-events: none; }
+  .splash-shield { width: 90px; height: 90px; margin-bottom: 24px; }
+  .splash-shield svg { width: 100%; height: 100%; }
+  .splash-title { font-family: var(--font-head); font-size: 32px; font-weight: 700; letter-spacing: 6px; color: var(--text); }
+  .splash-sub { font-size: 11px; letter-spacing: 3px; color: var(--text3); margin-top: 4px; text-transform: uppercase; }
+  .splash-bar { width: 120px; height: 2px; background: var(--border); margin-top: 32px; border-radius: 2px; overflow: hidden; }
+  .splash-progress { height: 100%; width: 0; background: var(--accent); border-radius: 2px; animation: load 1.4s ease forwards; }
+  @keyframes load { to { width: 100%; } }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(10,15,30,.95); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .header-shield { width: 28px; height: 28px; flex-shrink: 0; }
+  .header-title { font-family: var(--font-head); font-size: 18px; font-weight: 700; letter-spacing: 3px; flex: 1; }
+  .header-badge {
+    font-size: 9px; letter-spacing: 1.5px; padding: 3px 8px;
+    border: 1px solid var(--accent); color: var(--accent2);
+    border-radius: 2px; font-weight: 500;
+  }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--success); box-shadow: 0 0 6px var(--success);
+    animation: pulse 2s ease infinite;
+  }
+  .status-dot.offline { background: var(--danger); box-shadow: 0 0 6px var(--danger); animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+  /* ── MAIN ── */
+  main { padding: 16px; max-width: 600px; margin: 0 auto; padding-bottom: 40px; }
+
+  /* ── DATETIME BAR ── */
+  .datetime-bar {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; padding: 10px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .datetime-bar .dt-label { font-size: 10px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; }
+  .datetime-bar .dt-value { font-family: var(--font-head); font-size: 15px; font-weight: 600; color: var(--accent2); margin-top: 2px; letter-spacing: 1px; }
+
+  /* ── SECTION ── */
+  .section {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 14px; overflow: hidden;
+  }
+  .section-header {
+    padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(90deg, rgba(29,110,245,.08) 0%, transparent 100%);
+  }
+  .section-icon { font-size: 14px; }
+  .section-title { font-family: var(--font-head); font-size: 13px; font-weight: 600; letter-spacing: 2.5px; color: var(--accent2); text-transform: uppercase; }
+  .section-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* ── FORM ELEMENTS ── */
+  label { font-size: 10px; letter-spacing: 1.5px; color: var(--text3); text-transform: uppercase; display: block; margin-bottom: 5px; }
+  input[type=text], input[type=number], textarea, select {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; padding: 11px 13px; color: var(--text);
+    font-family: var(--font-body); font-size: 15px; outline: none;
+    transition: border-color .2s;
+    -webkit-appearance: none; appearance: none;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  input::placeholder, textarea::placeholder { color: var(--text3); }
+  textarea { resize: none; min-height: 90px; line-height: 1.5; }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 13px center; padding-right: 36px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* ── TIPOS DE OCORRÊNCIA ── */
+  .tipo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tipo-btn {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; padding: 12px 10px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    transition: all .18s; position: relative; overflow: hidden;
+  }
+  .tipo-btn:active { transform: scale(.97); }
+  .tipo-btn.selected { border-color: var(--accent); background: rgba(29,110,245,.12); }
+  .tipo-btn.selected::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 2px; background: var(--accent);
+  }
+  .tipo-btn .tipo-icon { font-size: 20px; }
+  .tipo-btn .tipo-label { font-size: 11px; letter-spacing: .5px; color: var(--text2); text-align: center; line-height: 1.3; font-weight: 500; }
+  .tipo-btn.selected .tipo-label { color: var(--accent2); }
+
+  /* ── GEO ── */
+  .geo-box {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .geo-icon { font-size: 20px; flex-shrink: 0; }
+  .geo-info { flex: 1; min-width: 0; }
+  .geo-coords { font-family: var(--font-head); font-size: 13px; letter-spacing: 1px; color: var(--accent2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .geo-status { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .geo-btn {
+    background: var(--accent); color: #fff; border: none;
+    border-radius: 5px; padding: 9px 14px; font-size: 12px;
+    font-weight: 600; letter-spacing: 1px; cursor: pointer;
+    font-family: var(--font-body); white-space: nowrap;
+    transition: background .2s;
+  }
+  .geo-btn:active { background: #1557cc; }
+  .geo-btn:disabled { background: var(--text3); cursor: not-allowed; }
+
+  /* ── FOTO ── */
+  .foto-area {
+    border: 1.5px dashed var(--border); border-radius: 8px;
+    min-height: 160px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 8px;
+    cursor: pointer; transition: border-color .2s; position: relative;
+    overflow: hidden; background: var(--bg3);
+  }
+  .foto-area:active { border-color: var(--accent); }
+  .foto-area.has-foto { border-style: solid; border-color: var(--accent); padding: 0; }
+  .foto-area img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; display: block; }
+  .foto-placeholder { font-size: 28px; }
+  .foto-label { font-size: 12px; color: var(--text3); letter-spacing: 1px; }
+  .foto-change {
+    position: absolute; bottom: 8px; right: 8px;
+    background: rgba(10,15,30,.85); border: 1px solid var(--border);
+    border-radius: 4px; padding: 5px 10px; font-size: 11px; color: var(--text2);
+    cursor: pointer;
+  }
+  #foto-input { display: none; }
+
+  /* ── PENDENTES ── */
+  .pending-bar {
+    background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.25);
+    border-radius: 6px; padding: 10px 14px; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 10px; display: none;
+  }
+  .pending-bar.show { display: flex; }
+  .pending-icon { font-size: 16px; }
+  .pending-text { flex: 1; font-size: 12px; color: var(--warning); line-height: 1.4; }
+  .pending-sync {
+    background: var(--warning); color: #000; border: none;
+    border-radius: 4px; padding: 7px 12px; font-size: 11px;
+    font-weight: 700; letter-spacing: 1px; cursor: pointer;
+  }
+
+  /* ── SUBMIT ── */
+  .btn-submit {
+    width: 100%; background: var(--accent); color: #fff; border: none;
+    border-radius: 8px; padding: 17px; font-family: var(--font-head);
+    font-size: 17px; font-weight: 700; letter-spacing: 3px;
+    cursor: pointer; transition: all .2s; margin-top: 8px;
+    position: relative; overflow: hidden;
+  }
+  .btn-submit:active { transform: scale(.99); background: #1557cc; }
+  .btn-submit:disabled { background: var(--text3); cursor: not-allowed; }
+  .btn-submit .btn-inner { display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 20px; font-size: 13px; font-weight: 500;
+    white-space: nowrap; z-index: 200; opacity: 0;
+    transition: all .3s ease; pointer-events: none;
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.5);
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toast.success { border-color: var(--success); color: var(--success); }
+  #toast.error { border-color: var(--danger); color: var(--danger); }
+  #toast.info { border-color: var(--accent); color: var(--accent2); }
+
+  /* ── HISTÓRICO ── */
+  .hist-item {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; padding: 12px 14px; margin-bottom: 8px;
+  }
+  .hist-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .hist-tipo { font-size: 11px; font-weight: 600; letter-spacing: 1px; padding: 2px 8px; border-radius: 3px; background: rgba(29,110,245,.15); color: var(--accent2); }
+  .hist-dt { font-size: 11px; color: var(--text3); }
+  .hist-policial { font-size: 13px; font-weight: 500; color: var(--text); }
+  .hist-endereco { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .hist-pending { border-color: rgba(245,158,11,.3); }
+  .hist-pending .hist-tipo { background: rgba(245,158,11,.1); color: var(--warning); }
+
+  /* ── TABS ── */
+  .tabs { display: flex; gap: 0; margin-bottom: 16px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 4px; }
+  .tab {
+    flex: 1; text-align: center; padding: 9px; border-radius: 5px;
+    font-size: 12px; font-weight: 600; letter-spacing: 1.5px; color: var(--text3);
+    cursor: pointer; transition: all .2s; text-transform: uppercase;
+    font-family: var(--font-head);
+  }
+  .tab.active { background: var(--accent); color: #fff; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── INSTALL BANNER ── */
+  #install-banner {
+    background: rgba(29,110,245,.08); border: 1px solid rgba(29,110,245,.2);
+    border-radius: 6px; padding: 12px 14px; margin-bottom: 14px;
+    display: none; align-items: center; gap: 10px;
+  }
+  #install-banner.show { display: flex; }
+  #install-banner p { flex: 1; font-size: 12px; color: var(--text2); line-height: 1.4; }
+  #install-btn { background: var(--accent); color: #fff; border: none; border-radius: 4px; padding: 8px 14px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-shield">
+    <svg viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M45 5 L80 18 L80 48 Q80 68 45 85 Q10 68 10 48 L10 18 Z" fill="#111827" stroke="#1d6ef5" stroke-width="2"/>
+      <path d="M45 14 L72 25 L72 49 Q72 64 45 77 Q18 64 18 49 L18 25 Z" fill="#0a0f1e" stroke="#1d6ef5" stroke-width="1" opacity=".5"/>
+      <text x="45" y="57" text-anchor="middle" font-family="Rajdhani,sans-serif" font-size="22" font-weight="700" fill="#1d6ef5" letter-spacing="2">DHPP</text>
+      <path d="M30 38 L42 50 L62 30" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
+  </div>
+  <div class="splash-title">DHPP CAMPO</div>
+  <div class="splash-sub">Sistema de Registro Operacional</div>
+  <div class="splash-bar"><div class="splash-progress"></div></div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-shield">
+    <svg viewBox="0 0 28 28" fill="none">
+      <path d="M14 2L25 6.5V15Q25 22 14 26Q3 22 3 15V6.5Z" fill="#111827" stroke="#1d6ef5" stroke-width="1.5"/>
+      <text x="14" y="18" text-anchor="middle" font-family="Rajdhani" font-size="7" font-weight="700" fill="#1d6ef5">DHPP</text>
+    </svg>
+  </div>
+  <div class="header-title">DHPP CAMPO</div>
+  <div class="header-badge">OPERACIONAL</div>
+  <div class="status-dot" id="status-dot" title="Online"></div>
+</header>
+
+<!-- MAIN -->
+<main>
+
+  <!-- INSTALL BANNER -->
+  <div id="install-banner">
+    <span style="font-size:20px">📲</span>
+    <p>Instale o app na tela inicial para usar sem internet</p>
+    <button id="install-btn">Instalar</button>
+  </div>
+
+  <!-- PENDENTES -->
+  <div class="pending-bar" id="pending-bar">
+    <span class="pending-icon">⚠️</span>
+    <div class="pending-text">
+      <strong id="pending-count">0</strong> registro(s) aguardando envio
+    </div>
+    <button class="pending-sync" onclick="syncPending()">SINCRONIZAR</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('registro')">Registro</div>
+    <div class="tab" onclick="switchTab('historico')">Histórico</div>
+  </div>
+
+  <!-- TAB: REGISTRO -->
+  <div class="tab-content active" id="tab-registro">
+
+    <!-- DATETIME -->
+    <div class="datetime-bar">
+      <div>
+        <div class="dt-label">Data / Hora</div>
+        <div class="dt-value" id="dt-display">—</div>
+      </div>
+      <div style="text-align:right">
+        <div class="dt-label">Turno</div>
+        <div class="dt-value" id="turno-display">—</div>
+      </div>
+    </div>
+
+    <!-- POLICIAL -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">👮</span>
+        <span class="section-title">Identificação do Policial</span>
+      </div>
+      <div class="section-body">
+        <div>
+          <label>Nome completo</label>
+          <input type="text" id="f-nome" placeholder="Nome do policial" autocomplete="name">
+        </div>
+        <div class="row2">
+          <div>
+            <label>Matrícula</label>
+            <input type="text" id="f-matricula" placeholder="Ex: 123456">
+          </div>
+          <div>
+            <label>Unidade / Equipe</label>
+            <input type="text" id="f-unidade" placeholder="Ex: DHPP / EQ-01">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIPO DE OCORRÊNCIA -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">📋</span>
+        <span class="section-title">Tipo de Ocorrência</span>
+      </div>
+      <div class="section-body">
+        <div class="tipo-grid">
+          <div class="tipo-btn" onclick="selecionarTipo(this,'Abordagem de Pessoa')">
+            <span class="tipo-icon">🧍</span>
+            <span class="tipo-label">Abordagem de Pessoa</span>
+          </div>
+          <div class="tipo-btn" onclick="selecionarTipo(this,'Levantamento de Campo')">
+            <span class="tipo-icon">🗺️</span>
+            <span class="tipo-label">Levantamento de Campo</span>
+          </div>
+          <div class="tipo-btn" onclick="selecionarTipo(this,'Cumprimento de Mandado')">
+            <span class="tipo-icon">📄</span>
+            <span class="tipo-label">Cumprimento de Mandado</span>
+          </div>
+          <div class="tipo-btn" onclick="selecionarTipo(this,'Verificação de Denúncia')">
+            <span class="tipo-icon">🔍</span>
+            <span class="tipo-label">Verificação de Denúncia</span>
+          </div>
+        </div>
+        <input type="hidden" id="f-tipo">
+      </div>
+    </div>
+
+    <!-- LOCAL -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">📍</span>
+        <span class="section-title">Localização</span>
+      </div>
+      <div class="section-body">
+        <div class="geo-box">
+          <span class="geo-icon">🛰️</span>
+          <div class="geo-info">
+            <div class="geo-coords" id="geo-coords">Aguardando GPS...</div>
+            <div class="geo-status" id="geo-status">Toque em "Capturar" para obter localização</div>
+          </div>
+          <button class="geo-btn" id="geo-btn" onclick="capturarGeo()">Capturar</button>
+        </div>
+        <div>
+          <label>Endereço / Referência</label>
+          <input type="text" id="f-endereco" placeholder="Rua, bairro ou ponto de referência">
+        </div>
+      </div>
+    </div>
+
+    <!-- FOTO -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">📷</span>
+        <span class="section-title">Registro Fotográfico</span>
+      </div>
+      <div class="section-body">
+        <div class="foto-area" id="foto-area" onclick="document.getElementById('foto-input').click()">
+          <span class="foto-placeholder">📷</span>
+          <span class="foto-label">Toque para fotografar</span>
+        </div>
+        <input type="file" id="foto-input" accept="image/*" capture="environment" onchange="carregarFoto(this)">
+      </div>
+    </div>
+
+    <!-- OBSERVAÇÕES -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">📝</span>
+        <span class="section-title">Narrativa / Observações</span>
+      </div>
+      <div class="section-body">
+        <div>
+          <label>Descrição da ocorrência</label>
+          <textarea id="f-obs" placeholder="Descreva os detalhes da ocorrência, pessoas envolvidas, veículos, resultado da ação..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBMIT -->
+    <button class="btn-submit" id="btn-submit" onclick="enviarRegistro()">
+      <div class="btn-inner">
+        <div class="spinner" id="spinner"></div>
+        <span id="btn-text">REGISTRAR OCORRÊNCIA</span>
+      </div>
+    </button>
+
+  </div><!-- /tab-registro -->
+
+  <!-- TAB: HISTÓRICO -->
+  <div class="tab-content" id="tab-historico">
+    <div id="historico-lista">
+      <div style="text-align:center;padding:40px 0;color:var(--text3);font-size:14px">
+        Nenhum registro ainda
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+// SUBSTITUA pela URL do seu Apps Script após o deploy
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzMCSZ4LbraFkhZe2J4EDezIf3c_p0nq0CfvR30L0PaBG5_zgvwLxGuE64fVyDRa6gD/exec';
+
+// ── ESTADO ──────────────────────────────────────────────────────────────────
+let tipoSelecionado = '';
+let geoData = null;
+let fotoBase64 = null;
+let deferredPrompt = null;
+
+// ── SPLASH ──────────────────────────────────────────────────────────────────
+setTimeout(() => {
+  document.getElementById('splash').classList.add('hide');
+}, 1600);
+
+// ── DATETIME ────────────────────────────────────────────────────────────────
+function updateDatetime() {
+  const now = new Date();
+  const dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const d = String(now.getDate()).padStart(2,'0');
+  const m = String(now.getMonth()+1).padStart(2,'0');
+  const y = now.getFullYear();
+  const h = String(now.getHours()).padStart(2,'0');
+  const min = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('dt-display').textContent = `${dias[now.getDay()]} ${d}/${m}/${y} — ${h}:${min}`;
+  const hr = now.getHours();
+  const turno = hr >= 6 && hr < 14 ? 'MANHÃ' : hr >= 14 && hr < 22 ? 'TARDE' : 'NOITE';
+  document.getElementById('turno-display').textContent = turno;
+}
+updateDatetime();
+setInterval(updateDatetime, 30000);
+
+// ── ONLINE/OFFLINE ───────────────────────────────────────────────────────────
+function updateOnlineStatus() {
+  const dot = document.getElementById('status-dot');
+  if (navigator.onLine) {
+    dot.classList.remove('offline');
+    dot.title = 'Online';
+    checkPending();
+  } else {
+    dot.classList.add('offline');
+    dot.title = 'Offline';
+  }
+}
+window.addEventListener('online', () => { updateOnlineStatus(); toast('Conexão restaurada', 'success'); checkPending(); });
+window.addEventListener('offline', () => { updateOnlineStatus(); toast('Sem conexão — registros salvos localmente', 'info'); });
+updateOnlineStatus();
+
+// ── TIPO ─────────────────────────────────────────────────────────────────────
+function selecionarTipo(el, tipo) {
+  document.querySelectorAll('.tipo-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  tipoSelecionado = tipo;
+  document.getElementById('f-tipo').value = tipo;
+}
+
+// ── GEO ──────────────────────────────────────────────────────────────────────
+function capturarGeo() {
+  const btn = document.getElementById('geo-btn');
+  const status = document.getElementById('geo-status');
+  btn.disabled = true;
+  btn.textContent = '...';
+  status.textContent = 'Obtendo localização...';
+  if (!navigator.geolocation) {
+    toast('GPS não disponível neste dispositivo', 'error');
+    btn.disabled = false; btn.textContent = 'Capturar'; return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      geoData = { lat: pos.coords.latitude.toFixed(6), lng: pos.coords.longitude.toFixed(6), acc: Math.round(pos.coords.accuracy) };
+      document.getElementById('geo-coords').textContent = `${geoData.lat}, ${geoData.lng}`;
+      status.textContent = `Precisão: ±${geoData.acc}m`;
+      btn.textContent = '✓ OK'; btn.style.background = 'var(--success)';
+      btn.disabled = false;
+      toast('Localização capturada', 'success');
+    },
+    err => {
+      const msgs = { 1:'Permissão negada — verifique as configurações', 2:'Sinal GPS indisponível', 3:'Tempo esgotado — tente novamente' };
+      status.textContent = msgs[err.code] || 'Erro ao capturar';
+      btn.disabled = false; btn.textContent = 'Tentar';
+      toast('Erro de GPS: ' + (msgs[err.code] || 'desconhecido'), 'error');
+    },
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+  );
+}
+
+// ── FOTO ──────────────────────────────────────────────────────────────────────
+function carregarFoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    fotoBase64 = e.target.result;
+    const area = document.getElementById('foto-area');
+    area.innerHTML = `<img src="${fotoBase64}" alt="Foto capturada"><div class="foto-change" onclick="event.stopPropagation();document.getElementById('foto-input').click()">Trocar foto</div>`;
+    area.classList.add('has-foto');
+    area.onclick = null;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── VALIDAR ───────────────────────────────────────────────────────────────────
+function validar() {
+  if (!document.getElementById('f-nome').value.trim()) { toast('Informe o nome do policial', 'error'); return false; }
+  if (!document.getElementById('f-matricula').value.trim()) { toast('Informe a matrícula', 'error'); return false; }
+  if (!document.getElementById('f-unidade').value.trim()) { toast('Informe a unidade / equipe', 'error'); return false; }
+  if (!tipoSelecionado) { toast('Selecione o tipo de ocorrência', 'error'); return false; }
+  if (!document.getElementById('f-endereco').value.trim()) { toast('Informe o endereço / referência', 'error'); return false; }
+  return true;
+}
+
+// ── MONTAR PAYLOAD ────────────────────────────────────────────────────────────
+function montarPayload() {
+  const now = new Date();
+  return {
+    timestamp: now.toISOString(),
+    dataHora: now.toLocaleString('pt-BR'),
+    nome: document.getElementById('f-nome').value.trim(),
+    matricula: document.getElementById('f-matricula').value.trim(),
+    unidade: document.getElementById('f-unidade').value.trim(),
+    tipo: tipoSelecionado,
+    latitude: geoData ? geoData.lat : '',
+    longitude: geoData ? geoData.lng : '',
+    precisao: geoData ? geoData.acc + 'm' : '',
+    endereco: document.getElementById('f-endereco').value.trim(),
+    observacoes: document.getElementById('f-obs').value.trim(),
+    foto: fotoBase64 || ''
+  };
+}
+
+// ── ENVIAR ────────────────────────────────────────────────────────────────────
+async function enviarRegistro() {
+  if (!validar()) return;
+  const btn = document.getElementById('btn-submit');
+  const spinner = document.getElementById('spinner');
+  const btnText = document.getElementById('btn-text');
+  btn.disabled = true; spinner.style.display = 'block'; btnText.textContent = 'ENVIANDO...';
+
+  const payload = montarPayload();
+
+  if (!navigator.onLine) {
+    salvarPendente(payload);
+    limparFormulario();
+    btn.disabled = false; spinner.style.display = 'none'; btnText.textContent = 'REGISTRAR OCORRÊNCIA';
+    toast('Sem conexão — salvo localmente ✓', 'info');
+    return;
+  }
+
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (data.status === 'ok') {
+      salvarHistorico(payload, 'enviado');
+      limparFormulario();
+      toast('Ocorrência registrada com sucesso ✓', 'success');
+    } else throw new Error(data.message || 'Erro no servidor');
+  } catch (e) {
+    salvarPendente(payload);
+    limparFormulario();
+    toast('Salvo localmente — sincronize quando tiver sinal', 'info');
+  }
+
+  btn.disabled = false; spinner.style.display = 'none'; btnText.textContent = 'REGISTRAR OCORRÊNCIA';
+}
+
+// ── LOCAL STORAGE ─────────────────────────────────────────────────────────────
+function salvarPendente(payload) {
+  const pendentes = JSON.parse(localStorage.getItem('dhpp_pendentes') || '[]');
+  pendentes.push(payload);
+  localStorage.setItem('dhpp_pendentes', JSON.stringify(pendentes));
+  salvarHistorico(payload, 'pendente');
+  checkPending();
+}
+
+function salvarHistorico(payload, status) {
+  const hist = JSON.parse(localStorage.getItem('dhpp_historico') || '[]');
+  hist.unshift({ ...payload, status });
+  if (hist.length > 100) hist.pop();
+  localStorage.setItem('dhpp_historico', JSON.stringify(hist));
+  renderHistorico();
+}
+
+function checkPending() {
+  const pendentes = JSON.parse(localStorage.getItem('dhpp_pendentes') || '[]');
+  const bar = document.getElementById('pending-bar');
+  if (pendentes.length > 0) {
+    bar.classList.add('show');
+    document.getElementById('pending-count').textContent = pendentes.length;
+  } else {
+    bar.classList.remove('show');
+  }
+}
+
+async function syncPending() {
+  if (!navigator.onLine) { toast('Sem conexão', 'error'); return; }
+  const pendentes = JSON.parse(localStorage.getItem('dhpp_pendentes') || '[]');
+  if (!pendentes.length) { toast('Nenhum pendente', 'info'); return; }
+  toast('Sincronizando ' + pendentes.length + ' registro(s)...', 'info');
+  let ok = 0, falhas = [];
+  for (const p of pendentes) {
+    try {
+      const resp = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) });
+      const data = await resp.json();
+      if (data.status === 'ok') ok++;
+      else falhas.push(p);
+    } catch { falhas.push(p); }
+  }
+  localStorage.setItem('dhpp_pendentes', JSON.stringify(falhas));
+  checkPending();
+  renderHistorico();
+  if (falhas.length === 0) toast(`${ok} registro(s) enviado(s) ✓`, 'success');
+  else toast(`${ok} enviado(s), ${falhas.length} com falha`, 'error');
+}
+
+// ── HISTÓRICO ─────────────────────────────────────────────────────────────────
+function renderHistorico() {
+  const hist = JSON.parse(localStorage.getItem('dhpp_historico') || '[]');
+  const el = document.getElementById('historico-lista');
+  if (!hist.length) {
+    el.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text3);font-size:14px">Nenhum registro ainda</div>';
+    return;
+  }
+  el.innerHTML = hist.map(r => `
+    <div class="hist-item ${r.status === 'pendente' ? 'hist-pending' : ''}">
+      <div class="hist-top">
+        <span class="hist-tipo">${r.tipo || '—'}</span>
+        <span class="hist-dt">${r.dataHora || '—'} ${r.status === 'pendente' ? '⚠️' : '✓'}</span>
+      </div>
+      <div class="hist-policial">${r.nome || '—'} · ${r.matricula || '—'}</div>
+      <div class="hist-endereco">${r.endereco || '—'} ${r.latitude ? '· ' + r.latitude + ', ' + r.longitude : ''}</div>
+    </div>
+  `).join('');
+}
+
+// ── LIMPAR FORMULÁRIO ─────────────────────────────────────────────────────────
+function limparFormulario() {
+  document.getElementById('f-tipo').value = '';
+  document.getElementById('f-obs').value = '';
+  document.getElementById('f-endereco').value = '';
+  document.querySelectorAll('.tipo-btn').forEach(b => b.classList.remove('selected'));
+  tipoSelecionado = '';
+  geoData = null;
+  fotoBase64 = null;
+  document.getElementById('geo-coords').textContent = 'Aguardando GPS...';
+  document.getElementById('geo-status').textContent = 'Toque em "Capturar" para obter localização';
+  const geoBtn = document.getElementById('geo-btn');
+  geoBtn.textContent = 'Capturar'; geoBtn.style.background = ''; geoBtn.disabled = false;
+  const fotoArea = document.getElementById('foto-area');
+  fotoArea.classList.remove('has-foto');
+  fotoArea.innerHTML = '<span class="foto-placeholder">📷</span><span class="foto-label">Toque para fotografar</span>';
+  fotoArea.onclick = () => document.getElementById('foto-input').click();
+  document.getElementById('foto-input').value = '';
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['registro','historico'][i] === tab));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'historico') renderHistorico();
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, tipo = 'info') {
+  const el = document.getElementById('toast');
+  const icons = { success: '✓', error: '✕', info: 'ℹ' };
+  el.innerHTML = `<span>${icons[tipo]||'ℹ'}</span><span>${msg}</span>`;
+  el.className = 'show ' + tipo;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 3000);
+}
+
+// ── PWA INSTALL ───────────────────────────────────────────────────────────────
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredPrompt = e;
+  document.getElementById('install-banner').classList.add('show');
+});
+document.getElementById('install-btn').onclick = async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === 'accepted') { document.getElementById('install-banner').classList.remove('show'); toast('App instalado!', 'success'); }
+  deferredPrompt = null;
+};
+
+// ── SERVICE WORKER ────────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+checkPending();
+renderHistorico();
+</script>
+</body>
+</html>
