@@ -325,7 +325,7 @@
     </svg>
   </div>
   <div class="login-title">ACESSO RESTRITO</div>
-  <div class="login-sub">CIPC — Sistema Operacional</div>
+  <div class="login-sub">CIPC Balsas — Sistema Operacional</div>
 
   <div class="login-box">
     <label class="login-label">Senha de acesso</label>
@@ -476,13 +476,15 @@
       <div class="section-header">
         <span class="section-icon">📷</span>
         <span class="section-title">Registro Fotográfico</span>
+        <span style="font-size:11px;color:var(--text3);margin-left:auto" id="foto-contador">0 / 4 fotos</span>
       </div>
       <div class="section-body">
-        <div class="foto-area" id="foto-area" onclick="document.getElementById('foto-input').click()">
+        <div id="fotos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+        <div class="foto-area" id="foto-add-btn" onclick="document.getElementById('foto-input').click()">
           <span class="foto-placeholder">📷</span>
-          <span class="foto-label">Toque para fotografar</span>
+          <span class="foto-label">Toque para adicionar foto</span>
         </div>
-        <input type="file" id="foto-input" accept="image/*" capture="environment" onchange="carregarFoto(this)">
+        <input type="file" id="foto-input" accept="image/*" capture="environment" onchange="adicionarFoto(this)">
       </div>
     </div>
 
@@ -532,7 +534,7 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzMCSZ4LbraFkhZ
 // ── ESTADO ──────────────────────────────────────────────────────────────────
 let tipoSelecionado = '';
 let geoData = null;
-let fotoBase64 = null;
+let fotosBase64 = [];
 let deferredPrompt = null;
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
@@ -706,19 +708,37 @@ function capturarGeo() {
   );
 }
 
-// ── FOTO ──────────────────────────────────────────────────────────────────────
-function carregarFoto(input) {
+// ── FOTOS (múltiplas) ─────────────────────────────────────────────────────────
+function adicionarFoto(input) {
   const file = input.files[0];
   if (!file) return;
+  if (fotosBase64.length >= 4) { toast('Máximo de 4 fotos atingido', 'error'); return; }
   const reader = new FileReader();
   reader.onload = e => {
-    fotoBase64 = e.target.result;
-    const area = document.getElementById('foto-area');
-    area.innerHTML = `<img src="${fotoBase64}" alt="Foto capturada"><div class="foto-change" onclick="event.stopPropagation();document.getElementById('foto-input').click()">Trocar foto</div>`;
-    area.classList.add('has-foto');
-    area.onclick = null;
+    fotosBase64.push(e.target.result);
+    renderFotos();
+    input.value = '';
   };
   reader.readAsDataURL(file);
+}
+
+function renderFotos() {
+  const grid = document.getElementById('fotos-grid');
+  const addBtn = document.getElementById('foto-add-btn');
+  const contador = document.getElementById('foto-contador');
+  contador.textContent = fotosBase64.length + ' / 4 fotos';
+  grid.innerHTML = fotosBase64.map((f, i) => `
+    <div style="position:relative;border-radius:6px;overflow:hidden;border:1px solid var(--accent);aspect-ratio:4/3">
+      <img src="${f}" style="width:100%;height:100%;object-fit:cover;display:block">
+      <div onclick="removerFoto(${i})" style="position:absolute;top:4px;right:4px;background:rgba(10,15,30,.85);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--danger);cursor:pointer">✕</div>
+    </div>
+  `).join('');
+  addBtn.style.display = fotosBase64.length >= 4 ? 'none' : 'flex';
+}
+
+function removerFoto(i) {
+  fotosBase64.splice(i, 1);
+  renderFotos();
 }
 
 // ── VALIDAR ───────────────────────────────────────────────────────────────────
@@ -746,7 +766,7 @@ function montarPayload() {
     precisao: geoData ? geoData.acc + 'm' : '',
     endereco: document.getElementById('f-endereco').value.trim(),
     observacoes: document.getElementById('f-obs').value.trim(),
-    foto: fotoBase64 || ''
+    fotos: fotosBase64
   };
 }
 
@@ -769,16 +789,15 @@ async function enviarRegistro() {
   }
 
   try {
-    const resp = await fetch(APPS_SCRIPT_URL, {
+    await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
+      mode: 'no-cors',
       body: JSON.stringify(payload)
     });
-    const data = await resp.json();
-    if (data.status === 'ok') {
-      salvarHistorico(payload, 'enviado');
-      limparFormulario();
-      toast('Ocorrência registrada com sucesso ✓', 'success');
-    } else throw new Error(data.message || 'Erro no servidor');
+    // no-cors não retorna dados — se não jogou erro, consideramos sucesso
+    salvarHistorico(payload, 'enviado');
+    limparFormulario();
+    toast('Ocorrência registrada com sucesso ✓', 'success');
   } catch (e) {
     salvarPendente(payload);
     limparFormulario();
@@ -824,10 +843,8 @@ async function syncPending() {
   let ok = 0, falhas = [];
   for (const p of pendentes) {
     try {
-      const resp = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(p) });
-      const data = await resp.json();
-      if (data.status === 'ok') ok++;
-      else falhas.push(p);
+      await fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) });
+      ok++;
     } catch { falhas.push(p); }
   }
   localStorage.setItem('cipc_pendentes', JSON.stringify(falhas));
@@ -857,7 +874,7 @@ function renderHistorico() {
   `).join('');
 }
 
-// ── LIMPAR FORMULÁRIO ─────────────────────────────────────────────────────────
+// ── LIMPAR FORMULÁRIO ─────────────────────────────────────────
 function limparFormulario() {
   document.getElementById('f-tipo').value = '';
   document.getElementById('f-obs').value = '';
@@ -865,15 +882,12 @@ function limparFormulario() {
   document.querySelectorAll('.tipo-btn').forEach(b => b.classList.remove('selected'));
   tipoSelecionado = '';
   geoData = null;
-  fotoBase64 = null;
+  fotosBase64 = [];
+  renderFotos();
   document.getElementById('geo-coords').textContent = 'Aguardando GPS...';
   document.getElementById('geo-status').textContent = 'Toque em "Capturar" para obter localização';
   const geoBtn = document.getElementById('geo-btn');
   geoBtn.textContent = 'Capturar'; geoBtn.style.background = ''; geoBtn.disabled = false;
-  const fotoArea = document.getElementById('foto-area');
-  fotoArea.classList.remove('has-foto');
-  fotoArea.innerHTML = '<span class="foto-placeholder">📷</span><span class="foto-label">Toque para fotografar</span>';
-  fotoArea.onclick = () => document.getElementById('foto-input').click();
   document.getElementById('foto-input').value = '';
 }
 
